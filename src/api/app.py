@@ -42,29 +42,44 @@ def create_app() -> FastAPI:
             "version": "1.0.0",
         }
 
-    # Serve index.html on root and common index paths
+    # Determine static directory with reliable fallbacks
+    # src/api/app.py -> parent (api) -> parent (src) -> parent (project root)
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    static_candidate = repo_root / "static"
+    if static_candidate.exists():
+        static_dir = static_candidate
+    elif getattr(settings, "STATIC_DIR", None) and Path(settings.STATIC_DIR).exists():
+        static_dir = Path(settings.STATIC_DIR)
+    else:
+        # Fallback to local 'static' in runtime current working dir
+        static_dir = Path.cwd() / "static"
+
+    # Serve index.html on root
     @app.get("/", response_class=FileResponse)
     @app.get("/index.html", response_class=FileResponse)
     @app.get("/static/index.html", response_class=FileResponse)
     def serve_index():
-        index_file = settings.STATIC_DIR / "index.html"
+        index_file = static_dir / "index.html"
         if index_file.exists():
             return FileResponse(str(index_file), media_type="text/html")
-        return HTMLResponse("<h1>PlacidWay Assistant: UI index.html not found</h1>", status_code=404)
+        return HTMLResponse(
+            f"<h1>PlacidWay Assistant: index.html not found</h1><p>Looked in: {static_dir}</p>",
+            status_code=404,
+        )
 
-    # Mount static assets for CSS, JS, and static assets
-    if settings.STATIC_DIR.exists():
-        css_dir = settings.STATIC_DIR / "css"
+    # Mount static assets
+    if static_dir.exists():
+        css_dir = static_dir / "css"
         if css_dir.exists():
             app.mount("/css", StaticFiles(directory=str(css_dir)), name="css")
             app.mount("/static/css", StaticFiles(directory=str(css_dir)), name="static_css")
 
-        js_dir = settings.STATIC_DIR / "js"
+        js_dir = static_dir / "js"
         if js_dir.exists():
             app.mount("/js", StaticFiles(directory=str(js_dir)), name="js")
             app.mount("/static/js", StaticFiles(directory=str(js_dir)), name="static_js")
 
-        app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     return app
 
