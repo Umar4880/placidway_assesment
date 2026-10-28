@@ -1,0 +1,46 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv/
+
+# Environment and secrets
+.env
+*.env.local
+docs/
+.debug/
+uv.lock
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Distribution & Build
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Data & Database storage
+data/raw_html/*
+!data/raw_html/.gitkeep
+data/qdrant/*
+!data/qdrant/.gitkeep
+*.db
+*.sqlite3
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+cv

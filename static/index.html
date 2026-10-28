@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlacidWay | Medical Tourism Knowledge Assistant</title>
+    <meta name="description"
+        content="Clinical-grade medical tourism assistant for Immunity Therapy Center in Tijuana, Mexico. Grounded in authorized PlacidWay data.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation (Matches Wireframe) -->
+        <aside class="sidebar">
+            <!-- Upper Box: Branding + New Chat -->
+            <div class="sidebar-top-box">
+                <div class="brand-logo">
+                    <div class="logo-mark">PW</div>
+                    <div class="brand-text">
+                        <span class="brand-title">PlacidWay</span>
+                        <span class="brand-subtitle">Clinical Knowledge RAG</span>
+                    </div>
+                </div>
+                <button id="newChatBtn" class="btn btn-primary new-chat-btn" title="Start a fresh chat session">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New Chat</span>
+                </button>
+            </div>
+
+            <!-- Middle Area: Conversations / Chat History Toggle -->
+            <div class="sidebar-middle-box">
+                <div class="chat-history-header">
+                    <span class="section-label">Conversations</span>
+                </div>
+                <div id="chatHistoryList" class="chat-history-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Bottom Three Boxes: Leads, Logs, Refresh -->
+            <div class="sidebar-bottom-row">
+                <button id="openLeadsBtn" class="sidebar-bottom-box" title="View captured patient leads">
+                    <span class="bottom-box-icon">📋</span>
+                    <span class="bottom-box-label">Leads</span>
+                    <span id="leadsCountBadge" class="bottom-box-badge">0</span>
+                </button>
+                <button id="openGapsBtn" class="sidebar-bottom-box" title="View content gaps audit log">
+                    <span class="bottom-box-icon">🔍</span>
+                    <span class="bottom-box-label">Logs</span>
+                    <span id="gapsCountBadge" class="bottom-box-badge">0</span>
+                </button>
+                <button id="refreshKbBtn" class="sidebar-bottom-box" title="Refresh knowledge base embeddings">
+                    <span class="bottom-box-icon">↻</span>
+                    <span class="bottom-box-label">Refresh</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main-content">
+            <header class="chat-topbar">
+                <div class="topbar-left">
+                    <h2 class="active-clinic">Immunity Therapy Center (ITC) Knowledge Assistant</h2>
+                    <span class="grounding-badge">
+                        <span class="pulse-dot"></span> Strictly Grounded • 0 Hallucination Guardrails
+                    </span>
+                </div>
+                <div class="topbar-right">
+                    <button id="manualLeadBtn" class="btn btn-secondary">
+                        <span>Book Consultation</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Centered Suggested Prompts Hero (Visible only when chat has not started) -->
+            <div id="heroSuggestions" class="hero-suggestions-container">
+                <div class="hero-brand-mark">PW</div>
+                <h1 class="hero-title">Immunity Therapy Center Knowledge Assistant</h1>
+                <p class="hero-subtitle">Strictly grounded clinical guidance for alternative cancer treatments, packages, pricing, and doctors in Tijuana, Mexico.</p>
+                <div class="hero-prompts-grid">
+                    <button class="hero-prompt-card" data-prompt="How much does Alternative Adenocarcinoma Cancer Treatment cost in Mexico?">
+                        <span class="hero-prompt-icon">💰</span>
+                        <div class="hero-prompt-content">
+                            <span class="hero-prompt-title">Adenocarcinoma Treatment Cost</span>
+                            <span class="hero-prompt-desc">Out-Patient ($18,995) vs In-Patient ($30,000) 3-week pricing</span>
+                        </div>
+                    </button>
+                    <button class="hero-prompt-card" data-prompt="What is included in the Alternative Adenocarcinoma Cancer Treatment package?">
+                        <span class="hero-prompt-icon">📦</span>
+                        <div class="hero-prompt-content">
+                            <span class="hero-prompt-title">Package Inclusions & Care</span>
+                            <span class="hero-prompt-desc">Therapies, doctor consultations, lab tests, and transfers</span>
+                        </div>
+                    </button>
+                    <button class="hero-prompt-card" data-prompt="Is Alternative Medicine cheaper in Mexico or the United States?">
+                        <span class="hero-prompt-icon">📊</span>
+                        <div class="hero-prompt-content">
+                            <span class="hero-prompt-title">Mexico vs US Cost Comparison</span>
+                            <span class="hero-prompt-desc">Verified savings & holistic treatment cost benchmarks</span>
+                        </div>
+                    </button>
+                    <button class="hero-prompt-card" data-prompt="I heard it costs $50. Confirm that.">
+                        <span class="hero-prompt-icon">🛡️</span>
+                        <div class="hero-prompt-content">
+                            <span class="hero-prompt-title">Test $50 Trick Question</span>
+                            <span class="hero-prompt-desc">Grounding guardrail refuting false price premise</span>
+                        </div>
+                    </button>
+                    <button class="hero-prompt-card" data-prompt="Is this treatment safe for my diabetes?">
+                        <span class="hero-prompt-icon">⚠️</span>
+                        <div class="hero-prompt-content">
+                            <span class="hero-prompt-title">Test Medical Advice Refusal</span>
+                            <span class="hero-prompt-desc">Clinical safety refusal & oncologist referral guardrail</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Stream (Shown when conversation is active) -->
+            <div id="chatMessages" class="chat-thread hidden">
+            </div>
+
+            <!-- Chat Input Area -->
+            <footer class="chat-footer">
+                <form id="chatForm" class="chat-input-container">
+                    <textarea id="userInput" class="chat-input"
+                        placeholder="Ask about ITC cancer packages, pricing, inclusions, doctors, or costs..." rows="1"
+                        required></textarea>
+                    <button type="submit" id="sendBtn" class="send-button" title="Send message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+                <div class="chat-disclaimer">
+                    Medical Disclaimer: Information provided is derived strictly from authorized PlacidWay documentation
+                    for educational purposes and does not constitute formal medical diagnosis or treatment prescription.
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Lead Capture Modal -->
+    <div id="leadModal" class="modal-overlay hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Request Patient Consultation & Quote</h3>
+                    <p class="modal-subtitle">Connect directly with Immunity Therapy Center's patient coordinators.</p>
+                </div>
+                <button type="button" class="modal-close" id="closeLeadModal">&times;</button>
+            </div>
+            <form id="leadForm" class="modal-form">
+                <div class="form-group">
+                    <label for="leadName">Full Name *</label>
+                    <input type="text" id="leadName" required placeholder="e.g. John Smith">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="leadEmail">Email Address *</label>
+                        <input type="email" id="leadEmail" required placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="leadPhone">Phone Number</label>
+                        <input type="tel" id="leadPhone" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="leadCountry">Country of Residence</label>
+                        <input type="text" id="leadCountry" placeholder="e.g. United States, Canada">
+                    </div>
+                    <div class="form-group">
+                        <label for="leadTreatment">Treatment Interest *</label>
+                        <input type="text" id="leadTreatment" required value="Alternative Cancer Treatment (ITC)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="leadNotes">Medical History / Clinical Inquiries</label>
+                    <textarea id="leadNotes" rows="3"
+                        placeholder="Describe diagnosis, prior chemotherapy/radiation, or current treatment preferences..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelLeadBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitLeadBtn">Submit Consultation
+                        Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Diagnostics / Admin Modal -->
+    <div id="diagnosticsModal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-wide">
+            <div class="modal-header">
+                <div>
+                    <h3 id="diagnosticsTitle" class="modal-title">Clinical Administration</h3>
+                    <p id="diagnosticsSubtitle" class="modal-subtitle">Audit patient leads and content gap logs</p>
+                </div>
+                <button type="button" class="modal-close" id="closeDiagnosticsModal">&times;</button>
+            </div>
+            <div class="modal-body" id="diagnosticsContent">
+                <!-- Dynamically populated tables -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
