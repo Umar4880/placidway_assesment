@@ -2,6 +2,7 @@
 FastAPI application factory and middleware configuration.
 """
 
+import urllib.parse
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -22,15 +23,31 @@ class VercelRewriteMiddleware:
     async def __call__(self, scope, receive, send):
         if scope.get("type") == "http":
             current_path = scope.get("path", "")
-            # If Vercel rewrote the path to the lambda entrypoint itself
-            if current_path in ("/api/index.py", "/api/index", "/api/index/"):
+            query_string = scope.get("query_string", b"").decode("utf-8", "ignore")
+
+            # 1. Primary: Extract target path forwarded by Vercel rewrite parameter
+            if query_string:
+                parsed = urllib.parse.parse_qs(query_string)
+                param_path = parsed.get("__path__") or parsed.get("path")
+                if param_path and param_path[0]:
+                    raw_sub = param_path[0].lstrip("/")
+                    target_path = "/" + raw_sub if raw_sub.startswith("api/") else "/api/" + raw_sub
+                    scope["path"] = target_path
+                    scope["raw_path"] = target_path.encode("utf-8")
+                    rem = [(k, v) for k, vs in parsed.items() if k not in ("path", "__path__") for v in vs]
+                    scope["query_string"] = urllib.parse.urlencode(rem).encode("utf-8")
+
+            # 2. Fallback: Check standard Vercel rewrite proxy headers
+            elif current_path in ("/api/index.py", "/api/index", "/api/index/"):
                 headers = dict(scope.get("headers", []))
                 for h_key in (b"x-matched-path", b"x-forwarded-uri", b"x-original-url", b"x-vercel-rewrite-path"):
                     if h_key in headers:
                         val = headers[h_key].decode("utf-8").split("?")[0]
                         if val and not val.startswith("/api/index"):
                             scope["path"] = val
+                            scope["raw_path"] = val.encode("utf-8")
                             break
+
         await self.asgi_app(scope, receive, send)
 
 
@@ -90,17 +107,6 @@ def create_app() -> FastAPI:
             status_code=404,
         )
 
-    # Diagnostic endpoint when Vercel routes directly to api/index.py
-    @app.api_route("/api/index.py", methods=["GET", "POST", "HEAD", "OPTIONS"])
-    @app.api_route("/api/index", methods=["GET", "POST", "HEAD", "OPTIONS"])
-    async def vercel_entrypoint_debug(request: Request):
-        return JSONResponse({
-            "scope_path": request.scope.get("path"),
-            "headers": {k.decode("latin1", "ignore"): v.decode("latin1", "ignore") for k, v in request.scope.get("headers", [])},
-            "query_params": dict(request.query_params),
-            "url": str(request.url),
-        })
-
     # Mount static assets if directories exist
     if static_dir.exists():
         css_dir = static_dir / "css"
@@ -127,7 +133,6 @@ def create_app() -> FastAPI:
 
         target = static_dir / clean_path
         if target.is_file():
-            # Explicit media types for CSS and JS to ensure browsers parse correctly
             media_type = None
             if clean_path.endswith(".css"):
                 media_type = "text/css"
