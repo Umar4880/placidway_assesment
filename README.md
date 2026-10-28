@@ -12,6 +12,9 @@
 [![Turso Cloud](https://img.shields.io/badge/Turso-libSQL_Cloud-00E599.svg)](https://turso.tech/)
 [![Ragas Evaluation](https://img.shields.io/badge/Ragas_Faithfulness-1.0000-brightgreen.svg)](evals/benchmark_report.md)
 [![Citation Grounding](https://img.shields.io/badge/Citation_Grounding-100%25-brightgreen.svg)](evals/benchmark_report.md)
+[![Roadmap & Improvements](https://img.shields.io/badge/Architecture-IMPROVEMENTS.md-8A2BE2.svg)](IMPROVEMENTS.md)
+
+> 🚀 **Future Roadmap & 1-Week Extension Plan:** Detailed technical specifications for hashing/caching, cross-encoder reranking, programmatic guardrails, context compaction, and multi-agent DAG swarm architectures are documented in [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
 
 ---
 
