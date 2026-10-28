@@ -5,7 +5,7 @@ Centralized logging configuration using RichHandler for structured, colored cons
 import logging
 import sys
 from rich.logging import RichHandler
-from src.config import settings
+from src.utils.config import settings
 
 
 def setup_logger(name: str = "placidway") -> logging.Logger:

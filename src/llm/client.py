@@ -5,6 +5,7 @@ with LangChain compatibility and structured output support.
 """
 
 import logging
+import os
 from typing import Optional, Any, List
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
