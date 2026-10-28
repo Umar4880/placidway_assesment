@@ -5,10 +5,33 @@ FastAPI application factory and middleware configuration.
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from src.utils.config import settings
 from src.api.routes import chat, refresh, leads, gaps
+
+
+class VercelRewriteMiddleware:
+    """
+    Middleware to ensure scope['path'] reflects the original request path
+    when hosted behind Vercel serverless function rewrites.
+    """
+    def __init__(self, asgi_app):
+        self.asgi_app = asgi_app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            current_path = scope.get("path", "")
+            # If Vercel rewrote the path to the lambda entrypoint itself
+            if current_path in ("/api/index.py", "/api/index", "/api/index/"):
+                headers = dict(scope.get("headers", []))
+                for h_key in (b"x-matched-path", b"x-forwarded-uri", b"x-original-url", b"x-vercel-rewrite-path"):
+                    if h_key in headers:
+                        val = headers[h_key].decode("utf-8").split("?")[0]
+                        if val and not val.startswith("/api/index"):
+                            scope["path"] = val
+                            break
+        await self.asgi_app(scope, receive, send)
 
 
 def create_app() -> FastAPI:
@@ -43,16 +66,17 @@ def create_app() -> FastAPI:
         }
 
     # Determine static directory with reliable fallbacks
-    # src/api/app.py -> parent (api) -> parent (src) -> parent (project root)
     repo_root = Path(__file__).resolve().parent.parent.parent
-    static_candidate = repo_root / "static"
-    if static_candidate.exists():
-        static_dir = static_candidate
+    if (repo_root / "public").exists():
+        static_dir = repo_root / "public"
+    elif (repo_root / "static").exists():
+        static_dir = repo_root / "static"
     elif getattr(settings, "STATIC_DIR", None) and Path(settings.STATIC_DIR).exists():
         static_dir = Path(settings.STATIC_DIR)
     else:
-        # Fallback to local 'static' in runtime current working dir
-        static_dir = Path.cwd() / "static"
+        static_dir = Path.cwd() / "public"
+        if not static_dir.exists():
+            static_dir = Path.cwd() / "static"
 
     # Serve index.html on root and Vercel entrypoint paths
     @app.get("/", response_class=FileResponse)
@@ -69,7 +93,7 @@ def create_app() -> FastAPI:
             status_code=404,
         )
 
-    # Mount static assets
+    # Mount static assets if directories exist
     if static_dir.exists():
         css_dir = static_dir / "css"
         if css_dir.exists():
@@ -83,18 +107,31 @@ def create_app() -> FastAPI:
 
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-    # Catch-all GET handler: guarantees static assets or SPA index.html is always returned
+    # Asset extensions that should never be served index.html
+    asset_extensions = (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".map")
+
+    # Catch-all GET handler: safely serves static assets or SPA index.html
     @app.get("/{full_path:path}", response_class=FileResponse)
     def catch_all_get(full_path: str):
-        # 1. Check if it's a static file request
         clean_path = full_path.lstrip("/")
         if clean_path.startswith("static/"):
             clean_path = clean_path[len("static/"):]
+
         target = static_dir / clean_path
         if target.is_file():
-            return FileResponse(str(target))
+            # Explicit media types for CSS and JS to ensure browsers parse correctly
+            media_type = None
+            if clean_path.endswith(".css"):
+                media_type = "text/css"
+            elif clean_path.endswith(".js"):
+                media_type = "application/javascript"
+            return FileResponse(str(target), media_type=media_type)
 
-        # 2. Otherwise serve index.html for SPA routing
+        # If it was an asset request and the file is missing, return 404 (DO NOT return index.html)
+        if any(clean_path.endswith(ext) for ext in asset_extensions):
+            return Response(content=f"Asset not found: {full_path}", status_code=404, media_type="text/plain")
+
+        # For non-asset routes (SPA navigation), return index.html
         index_file = static_dir / "index.html"
         if index_file.exists():
             return FileResponse(str(index_file), media_type="text/html")
@@ -102,6 +139,9 @@ def create_app() -> FastAPI:
             f"<h1>PlacidWay Assistant: index.html not found</h1><p>Looked in: {static_dir}</p><p>Requested path: {full_path}</p>",
             status_code=404,
         )
+
+    # Wrap app with Vercel rewrite middleware
+    app.add_middleware(VercelRewriteMiddleware)
 
     return app
 
