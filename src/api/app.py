@@ -54,9 +54,11 @@ def create_app() -> FastAPI:
         # Fallback to local 'static' in runtime current working dir
         static_dir = Path.cwd() / "static"
 
-    # Serve index.html on root
+    # Serve index.html on root and Vercel entrypoint paths
     @app.get("/", response_class=FileResponse)
     @app.get("/index.html", response_class=FileResponse)
+    @app.get("/api/index.py", response_class=FileResponse)
+    @app.get("/api/index", response_class=FileResponse)
     @app.get("/static/index.html", response_class=FileResponse)
     def serve_index():
         index_file = static_dir / "index.html"
@@ -80,6 +82,26 @@ def create_app() -> FastAPI:
             app.mount("/static/js", StaticFiles(directory=str(js_dir)), name="static_js")
 
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    # Catch-all GET handler: guarantees static assets or SPA index.html is always returned
+    @app.get("/{full_path:path}", response_class=FileResponse)
+    def catch_all_get(full_path: str):
+        # 1. Check if it's a static file request
+        clean_path = full_path.lstrip("/")
+        if clean_path.startswith("static/"):
+            clean_path = clean_path[len("static/"):]
+        target = static_dir / clean_path
+        if target.is_file():
+            return FileResponse(str(target))
+
+        # 2. Otherwise serve index.html for SPA routing
+        index_file = static_dir / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file), media_type="text/html")
+        return HTMLResponse(
+            f"<h1>PlacidWay Assistant: index.html not found</h1><p>Looked in: {static_dir}</p><p>Requested path: {full_path}</p>",
+            status_code=404,
+        )
 
     return app
 
