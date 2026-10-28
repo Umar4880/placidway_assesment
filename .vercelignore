@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+.pytest_cache
+.debug
+tests
+evals
+data/raw_html
+*.pyc
+__pycache__
+test.py
+placid_way.robots.txt
