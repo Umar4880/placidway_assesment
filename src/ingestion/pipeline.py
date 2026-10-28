@@ -35,7 +35,10 @@ class IngestionPipeline:
         self.crawler = crawler or CrawlerService()
         self.cleaner = cleaner or DOMCleaner()
         self.markdown_dir = markdown_dir or settings.MARKDOWN_DIR
-        self.markdown_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.markdown_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
 
     def _get_markdown_path(self, item: Dict[str, Any]) -> Path:
         """Generate a deterministic filename for the markdown file."""

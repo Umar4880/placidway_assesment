@@ -82,6 +82,10 @@ def create_app() -> FastAPI:
             "version": "1.0.0",
         }
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return Response(status_code=204)
+
     # Determine static directory with reliable fallbacks
     repo_root = Path(__file__).resolve().parent.parent.parent
     if (repo_root / "public").exists():

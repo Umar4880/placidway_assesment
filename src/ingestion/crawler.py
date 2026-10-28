@@ -29,7 +29,10 @@ class CrawlerService:
         self.user_agent = user_agent or settings.CRAWLER_USER_AGENT
         self.rate_limit_delay = rate_limit_delay or settings.CRAWLER_RATE_LIMIT_DELAY
         self.raw_html_dir = raw_html_dir or settings.RAW_HTML_DIR
-        self.raw_html_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.raw_html_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
 
         self.headers = {
             "User-Agent": self.user_agent,

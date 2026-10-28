@@ -5,6 +5,7 @@ Provides persistent storage for Lead Inquiries (NTH-4) and Content Gap Logging (
 
 from __future__ import annotations
 import logging
+import os
 import sqlite3
 from datetime import datetime, timezone
 from typing import List, Optional, Any, TYPE_CHECKING
@@ -36,11 +37,18 @@ class DatabaseManager:
 
         self.turso_url = raw_url
         self.turso_token = settings.TURSO_AUTH_TOKEN.strip() if settings.TURSO_AUTH_TOKEN else ""
-        self.local_db_path = str(db_path or settings.SQLITE_DB_PATH)
+        if os.environ.get("VERCEL"):
+            self.local_db_path = "/tmp/placidway.db"
+        else:
+            self.local_db_path = str(db_path or settings.SQLITE_DB_PATH)
         self.is_turso = bool(self.turso_url and self.turso_token)
 
         # Ensure parent directory exists for local db
-        settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            if not os.environ.get("VERCEL"):
+                settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
 
         try:
             self.init_db()

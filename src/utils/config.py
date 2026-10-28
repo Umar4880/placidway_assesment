@@ -16,13 +16,13 @@ if _ENV_PATH.exists():
 class Settings(BaseSettings):
     # Base paths
     BASE_DIR: Path = _BASE_DIR
-    DATA_DIR: Path = BASE_DIR / "data"
-    RAW_HTML_DIR: Path = DATA_DIR / "raw_html"
-    MARKDOWN_DIR: Path = DATA_DIR / "markdown"
-    QDRANT_STORAGE_DIR: Path = DATA_DIR / "qdrant"
-    SQLITE_DB_PATH: Path = DATA_DIR / "placidway.db"
-    STATIC_DIR: Path = BASE_DIR / "static"
-    DEBUG_DIR: Path = BASE_DIR / ".debug"
+    DATA_DIR: Path = Path("/tmp/data") if os.environ.get("VERCEL") else _BASE_DIR / "data"
+    RAW_HTML_DIR: Path = Path("/tmp/data/raw_html") if os.environ.get("VERCEL") else _BASE_DIR / "data" / "raw_html"
+    MARKDOWN_DIR: Path = Path("/tmp/data/markdown") if os.environ.get("VERCEL") else _BASE_DIR / "data" / "markdown"
+    QDRANT_STORAGE_DIR: Path = Path("/tmp/data/qdrant") if os.environ.get("VERCEL") else _BASE_DIR / "data" / "qdrant"
+    SQLITE_DB_PATH: Path = Path("/tmp/placidway.db") if os.environ.get("VERCEL") else _BASE_DIR / "data" / "placidway.db"
+    STATIC_DIR: Path = _BASE_DIR / "static"
+    DEBUG_DIR: Path = Path("/tmp/.debug") if os.environ.get("VERCEL") else _BASE_DIR / ".debug"
     
 
     # API Keys & Endpoints
