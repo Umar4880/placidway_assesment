@@ -50,11 +50,12 @@ class EmbeddingService:
         elif settings.QDRANT_MODE == "memory":
             logger.info("Initializing in-memory Qdrant client.")
             self.client = QdrantClient(":memory:")
-        elif settings.QDRANT_MODE == "remote" and settings.QDRANT_URL:
+        elif (settings.QDRANT_MODE == "remote" or bool(settings.QDRANT_URL)) and settings.QDRANT_URL:
             logger.info("Connecting to remote Qdrant at %s", settings.QDRANT_URL)
             self.client = QdrantClient(
                 url=settings.QDRANT_URL,
                 api_key=settings.QDRANT_API_KEY or None,
+                timeout=60,
             )
         else:
             storage_path = settings.QDRANT_STORAGE_DIR
@@ -79,12 +80,15 @@ class EmbeddingService:
                 else:
                     raise
 
-        # Setup debug paths
-        self.debug_dir = settings.DEBUG_DIR
+        # Setup debug paths (safe for read-only Vercel environment)
+        self.debug_dir = Path("/tmp/.debug") if os.environ.get("VERCEL") else settings.DEBUG_DIR
         self.debug_chunks_dir = self.debug_dir / "chunks"
         self.debug_retrievals_dir = self.debug_dir / "retrievals"
-        self.debug_chunks_dir.mkdir(parents=True, exist_ok=True)
-        self.debug_retrievals_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.debug_chunks_dir.mkdir(parents=True, exist_ok=True)
+            self.debug_retrievals_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
 
         self._ensure_collection()
         atexit.register(self.close)
@@ -300,9 +304,10 @@ class EmbeddingService:
             )
             points.append(point)
 
-        # 4. Upsert into Qdrant in batches
-        for i in range(0, len(points), batch_size):
-            batch_points = points[i : i + batch_size]
+        # 4. Upsert into Qdrant in smaller batches with timeout protection
+        upsert_batch_size = 20
+        for i in range(0, len(points), upsert_batch_size):
+            batch_points = points[i : i + upsert_batch_size]
             self.client.upsert(
                 collection_name=self.collection_name,
                 points=batch_points,

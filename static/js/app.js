@@ -621,7 +621,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
     }
-},
 
     // Handle Chat Form Submit with Real-time SSE Streaming
     chatForm.addEventListener("submit", async (e) => {
@@ -784,7 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
             sendBtn.removeAttribute("disabled");
         }
-    }));
+    });
 
 // Lead Modal Control
 function openLeadModalWindow() {
@@ -1017,3 +1016,5 @@ function escapeHtml(text) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+});
+

@@ -5,7 +5,7 @@
 .debug
 tests
 evals
-data/raw_html
+data/
 *.pyc
 __pycache__
 test.py
