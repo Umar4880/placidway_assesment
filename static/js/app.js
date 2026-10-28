@@ -567,12 +567,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (statusEl) {
                     statusEl.textContent = duration ? `Thought for ${duration}s` : "Thought process";
                 }
-                // Smoothly collapse thinking block like Claude/ChatGPT so user focus moves to answer
-                setTimeout(() => {
-                    thinkingContainer.classList.add("collapsed");
-                }, 350);
+                thinkingContainer.classList.add("collapsed");
             },
             update: (text) => {
+                if (!thoughtFinished) {
+                    thoughtFinished = true;
+                    thinkingContainer.classList.add("collapsed");
+                    const icon = thinkingToggle.querySelector(".thinking-icon");
+                    if (icon) icon.classList.remove("thinking-pulsing");
+                }
                 contentDiv.innerHTML = formatMarkdown(text) + '<span class="streaming-cursor"></span>';
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             },
