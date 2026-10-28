@@ -9,8 +9,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.ingestion.crawler import CrawlerService
-from src.ingestion.cleaner import DOMCleaner
+from src.ingestion.pipeline import IngestionPipeline
 from src.orchestration.service import get_orchestration_service
 
 logger = logging.getLogger(__name__)
@@ -29,23 +28,26 @@ class RefreshResponse(BaseModel):
 async def refresh_knowledge_base() -> RefreshResponse:
     """Trigger an atomic crawl and re-indexing of the 7 authorized URLs."""
     try:
-        crawler = CrawlerService()
-        cleaner = DOMCleaner()
+        logger.info("Executing on-demand knowledge base refresh via IngestionPipeline...")
+        pipeline = IngestionPipeline()
         service = get_orchestration_service()
 
+        # 1. Polite crawling & cleaning of authorized URLs
+        output_files = await pipeline.run(force_refresh=True)
+
+        # 2. Re-chunk & index markdown files into Qdrant in executor thread
         loop = asyncio.get_running_loop()
+        chunks_count = await loop.run_in_executor(
+            None,
+            lambda: service.retriever.embedding_service.index_all_markdown(force_recreate=True),
+        )
 
-        def do_refresh():
-            logger.info("Executing on-demand knowledge base refresh...")
-            # 1. Crawl all 7 authorized URLs with 1.0s politeness delay
-            crawled_pages = crawler.crawl_all(force_recrawl=True)
-            # 2. Clean HTML to Markdown
-            cleaner.clean_all(force_reclean=True)
-            # 3. Index markdown files into Qdrant
-            indexed_count = service.retriever.embedding_service.index_all_markdown(force_recreate=True)
-            return len(crawled_pages), indexed_count
-
-        urls_count, chunks_count = await loop.run_in_executor(None, do_refresh)
+        urls_count = len(output_files)
+        logger.info(
+            "Refresh complete: %d URLs crawled, %d chunks indexed.",
+            urls_count,
+            chunks_count,
+        )
 
         return RefreshResponse(
             status="success",

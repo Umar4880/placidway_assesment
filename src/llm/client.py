@@ -81,27 +81,40 @@ def get_llm(
     2. NVIDIA NIM (via langchain-openai compatible endpoint)
     3. OfflineDeterministicLLM (fallback for isolated runs/tests)
     """
-    api_key = settings.get_google_api_key()
+    target_model = model or settings.PRIMARY_LLM_MODEL
+    google_key = settings.get_google_api_key()
+    nvidia_key = getattr(settings, "NVIDIA_API_KEY", "")
+
     llm: BaseChatModel
 
-    if api_key and api_key != "your_gemini_api_key_here":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        target_model = model or settings.PRIMARY_LLM_MODEL
-        logger.info("Initializing Google Gemini model: %s", target_model)
-        llm = ChatGoogleGenerativeAI(
+    is_nvidia = target_model.startswith("nvidia/") or target_model.startswith("meta/") or target_model.startswith("mistralai/")
+
+    if is_nvidia and nvidia_key and nvidia_key != "your_nvidia_api_key_here":
+        from langchain_openai import ChatOpenAI
+        logger.info("Initializing NVIDIA NIM model: %s", target_model)
+        llm = ChatOpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=nvidia_key,
             model=target_model,
-            google_api_key=api_key,
+            temperature=temperature,
+        )
+    elif google_key and google_key != "your_gemini_api_key_here":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        gemini_model = target_model if target_model.startswith("gemini") else getattr(settings, "FALLBACK_LLM_MODEL", "gemini-3.5-flash")
+        logger.info("Initializing Google Gemini model: %s", gemini_model)
+        llm = ChatGoogleGenerativeAI(
+            model=gemini_model,
+            google_api_key=google_key,
             temperature=temperature,
             max_retries=1,
             timeout=10.0,
         )
-    elif settings.NVIDIA_API_KEY and settings.NVIDIA_API_KEY != "your_nvidia_api_key_here":
+    elif nvidia_key and nvidia_key != "your_nvidia_api_key_here":
         from langchain_openai import ChatOpenAI
-        target_model = model or settings.FALLBACK_LLM_MODEL
         logger.info("Initializing NVIDIA NIM fallback model: %s", target_model)
         llm = ChatOpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
-            api_key=settings.NVIDIA_API_KEY,
+            api_key=nvidia_key,
             model=target_model,
             temperature=temperature,
         )

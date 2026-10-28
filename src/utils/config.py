@@ -2,13 +2,20 @@
 Application configuration and environment settings.
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_PATH = _BASE_DIR / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(_ENV_PATH, override=True)
 
 
 class Settings(BaseSettings):
     # Base paths
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    BASE_DIR: Path = _BASE_DIR
     DATA_DIR: Path = BASE_DIR / "data"
     RAW_HTML_DIR: Path = DATA_DIR / "raw_html"
     MARKDOWN_DIR: Path = DATA_DIR / "markdown"
@@ -48,10 +55,10 @@ class Settings(BaseSettings):
     DEFAULT_ORCHESTRATION_PATTERN: str = "pydantic_ai"
     EMBEDDING_MODEL_NAME: str = "gemini-embedding-001"
     PRIMARY_LLM_MODEL: str = "nvidia/nemotron-3.5-super-vl-120b-a12b"
-    FALLBACK_LLM_MODEL: str = "gemini-3.1-flash-lite"
+    FALLBACK_LLM_MODEL: str = "gemini-3.5-flash"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_PATH,
         env_file_encoding="utf-8",
         extra="ignore"
     )

@@ -98,10 +98,9 @@ class TableSummarizerService:
     ) -> TableSummary:
         """
         Summarize a markdown table into natural prose while preserving raw table.
-        Uses LLM if available; gracefully falls back to deterministic parsing.
+        Uses deterministic parsing for 100% factual accuracy, speed, and zero hallucination.
         """
-        # Always compute deterministic extraction for key_figures
-        fallback = self._deterministic_summary(
+        return self._deterministic_summary(
             table_markdown,
             document_title,
             section_title,
@@ -109,31 +108,3 @@ class TableSummarizerService:
             intro_text=intro_text,
             table_notes=table_notes,
         )
-
-        api_key = settings.get_google_api_key()
-        if not api_key or api_key == "your_gemini_api_key_here":
-            return fallback
-
-        try:
-            prompt = TABLE_SUMMARIZER_PROMPT.format(
-                document_title=document_title,
-                section_title=section_title,
-                source_url=source_url,
-                intro_text=intro_text or "N/A",
-                table_notes=table_notes or "N/A",
-                table_markdown=table_markdown,
-            )
-            response = self.llm.invoke(prompt)
-            summary_content = (
-                response.content if hasattr(response, "content") else str(response)
-            ).strip()
-
-            return TableSummary(
-                title=section_title or document_title,
-                summary=summary_content,
-                key_figures=fallback.key_figures,
-                raw_table=table_markdown,
-            )
-        except Exception as e:
-            logger.warning("LLM table summarization encountered error (%s). Using deterministic summary.", e)
-            return fallback

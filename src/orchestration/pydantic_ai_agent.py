@@ -93,7 +93,7 @@ def create_pydantic_ai_agent() -> Agent[MedicalAssistantDeps, str]:
 
     # 2. Fallback Model: Google Gemini
     google_key = settings.get_google_api_key() or os.environ.get("GEMINI_API_KEY", "")
-    fallback_model_name = getattr(settings, "FALLBACK_LLM_MODEL", "gemini-3.1-flash-lite")
+    fallback_model_name = getattr(settings, "FALLBACK_LLM_MODEL", "gemini-3.5-flash")
 
     if google_key and google_key != "your_gemini_api_key_here":
         os.environ["GEMINI_API_KEY"] = google_key

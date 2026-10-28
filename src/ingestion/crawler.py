@@ -179,3 +179,11 @@ class CrawlerService:
 
         logger.info("Crawl completed: %d/%d pages fetched.", len(results), len(targets))
         return results
+
+    async def crawl_all(self, force_recrawl: bool = False) -> Dict[str, str]:
+        """Alias for fetch_all for backward compatibility."""
+        return await self.fetch_all(force_refresh=force_recrawl)
+
+    async def crawl_all(self, force_recrawl: bool = False) -> Dict[str, str]:
+        """Alias for fetch_all for backward compatibility."""
+        return await self.fetch_all(force_refresh=force_recrawl)

@@ -382,11 +382,34 @@ pytest -v
 
 The assessment requires that the bot is available on a public URL for review without requiring local installation, and kept running for at least 7 days. You can deploy it using any of the following options:
 
-#### Option A: 1-Click Cloud Deploy (Render / Railway / Fly.io)
+#### Option A: Vercel Deployment (Pre-Configured via `vercel.json`)
+
+This repository is pre-configured for **Vercel** with a serverless entry point at [`api/index.py`](api/index.py) and routing configuration in [`vercel.json`](vercel.json).
+
+1. **Deploy via Vercel Web Dashboard (Easiest):**
+   - Push your code to GitHub.
+   - Go to [vercel.com](https://vercel.com) and click **"Add New..."** > **"Project"**.
+   - Import your GitHub repository.
+   - Under **Environment Variables**, add:
+     - `GEMINI_API_KEY`
+     - `NVIDIA_API_KEY`
+     - `NVIDIA_BASE_URL` = `https://integrate.api.nvidia.com/v1`
+     - `TURSO_DATABASE_URL`
+     - `TURSO_AUTH_TOKEN`
+   - Click **Deploy** — your live URL (e.g., `https://placidway-assistant.vercel.app`) will be active immediately.
+
+2. **Deploy via Vercel CLI:**
+   ```bash
+   npx vercel
+   # To deploy to production:
+   npx vercel --prod
+   ```
+
+#### Option B: 1-Click Container Deploy (Render / Railway / Fly.io)
 
 1. **Render.com / Railway.app:**
    - Link your GitHub repository.
-   - Choose **Docker** as the environment (it automatically detects the included [`Dockerfile`](file:///c:/Users/ranau/OneDrive/Desktop/PlacidWay%20Assesment/Dockerfile)).
+   - Choose **Docker** as the environment (it automatically detects the included [`Dockerfile`](Dockerfile)).
    - Set environment variables in the dashboard (`GEMINI_API_KEY`, `NVIDIA_API_KEY`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`).
    - Your public HTTPS URL (e.g., `https://placidway-assistant.onrender.com`) will be generated instantly.
 
@@ -396,22 +419,9 @@ The assessment requires that the bot is available on a public URL for review wit
    fly secrets set GEMINI_API_KEY=... NVIDIA_API_KEY=... TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=...
    fly deploy
    ```
-
-#### Option B: Cloudflare Tunnel (Instant HTTPS from your machine / VPS)
-You can expose the running local server directly via Cloudflare's free tunnel:
-```bash
-# 1. Download cloudflared from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-# 2. Run tunnel pointing to local FastAPI port 8000:
-cloudflared tunnel --url http://localhost:8000
-```
-This gives you an instant, secure `https://<random>.trycloudflare.com` URL to provide in your assessment submission.
-
-#### Option C: Docker Local Container
-```bash
-docker build -t placidway-assistant .
-docker run -p 8000:8000 --env-file .env placidway-assistant
-```
-
+   fly secrets set GEMINI_API_KEY=... NVIDIA_API_KEY=... TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=...
+   fly deploy
+   ```
 ---
 
 ## 9. REST & Streaming API Reference

@@ -58,14 +58,21 @@ class EmbeddingService:
             )
         else:
             storage_path = settings.QDRANT_STORAGE_DIR
-            storage_path.mkdir(parents=True, exist_ok=True)
+            if os.environ.get("VERCEL"):
+                tmp_qdrant = Path("/tmp/data/qdrant")
+                if tmp_qdrant.exists():
+                    storage_path = tmp_qdrant
+            try:
+                storage_path.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
             logger.info("Initializing embedded persistent Qdrant at %s", storage_path)
             try:
                 self.client = QdrantClient(path=str(storage_path))
             except Exception as exc:
-                if "already accessed" in str(exc).lower() or "lock" in str(exc).lower():
+                if "already accessed" in str(exc).lower() or "lock" in str(exc).lower() or "read-only" in str(exc).lower():
                     logger.warning(
-                        "Qdrant directory is locked by another process (%s). Falling back to in-memory mode.",
+                        "Qdrant directory is locked or read-only (%s). Falling back to in-memory mode.",
                         exc,
                     )
                     self.client = QdrantClient(":memory:")
