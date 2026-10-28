@@ -25,7 +25,8 @@ class FastEmbedDenseWrapper(Embeddings):
     """
 
     def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
-        self.model = TextEmbedding(model_name=model_name)
+        cache_dir = "/tmp/fastembed_cache" if os.environ.get("VERCEL") else None
+        self.model = TextEmbedding(model_name=model_name, cache_dir=cache_dir)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = list(self.model.embed(texts))
@@ -138,7 +139,11 @@ def get_dense_embeddings() -> Embeddings:
     Factory function returning the dense embeddings client.
     Uses GoogleGenerativeAIEmbeddings if API key present, else FastEmbed BGE-small.
     """
-    api_key = settings.get_google_api_key()
+    api_key = (
+        settings.get_google_api_key()
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
+    )
     if api_key and api_key != "your_gemini_api_key_here":
         try:
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -159,4 +164,5 @@ def get_sparse_embeddings() -> SparseTextEmbedding:
     Returns FastEmbed Qdrant/bm25 sparse embedder for native hybrid search.
     """
     logger.info("Using FastEmbed sparse model: Qdrant/bm25")
-    return SparseTextEmbedding(model_name="Qdrant/bm25")
+    cache_dir = "/tmp/fastembed_cache" if os.environ.get("VERCEL") else None
+    return SparseTextEmbedding(model_name="Qdrant/bm25", cache_dir=cache_dir)

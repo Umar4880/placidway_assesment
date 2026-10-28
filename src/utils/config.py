@@ -64,7 +64,11 @@ class Settings(BaseSettings):
     )
 
     def get_google_api_key(self) -> str:
-        return self.GEMINI_API_KEY
+        return (
+            self.GEMINI_API_KEY
+            or os.environ.get("GEMINI_API_KEY", "")
+            or os.environ.get("GOOGLE_API_KEY", "")
+        )
 
 
 settings = Settings()
