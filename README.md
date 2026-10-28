@@ -1,20 +1,13 @@
-# PlacidWay Grounded Medical Tourism Knowledge Assistant
+# PlacidWay Grounded Medical Tourism Knowledge Assistant - An Agentic RAG System
 
 > **Assessment Submission:** AI Automation Engineer / Chatbot Specialist  
 > **Clinical Domain:** Immunity Therapy Center (ITC), Tijuana, Mexico  
 > **Grounding Scope:** Strictly grounded on 7 authorized PlacidWay URLs (Zero Hallucination Guarantee)  
-> **Core Architecture:** Native PydanticAI Agent (`pydantic-ai==2.62.0`) + Dual-Vector Hybrid RRF Retrieval + Turso Cloud libSQL
+> **Core Architecture:** Native PydanticAI Agent (`pydantic-ai==2.62.0`) + Dual-Vector Hybrid RRF Retrieval, Turso Cloud libSQL + Qdrant
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
-[![PydanticAI](https://img.shields.io/badge/PydanticAI-2.62.0-E92063.svg)](https://ai.pydantic.dev/)
-[![Qdrant Hybrid RRF](https://img.shields.io/badge/Qdrant-Native_Hybrid_RRF-DC2626.svg)](https://qdrant.tech/)
-[![Turso Cloud](https://img.shields.io/badge/Turso-libSQL_Cloud-00E599.svg)](https://turso.tech/)
-[![Ragas Evaluation](https://img.shields.io/badge/Ragas_Faithfulness-1.0000-brightgreen.svg)](evals/benchmark_report.md)
-[![Citation Grounding](https://img.shields.io/badge/Citation_Grounding-100%25-brightgreen.svg)](evals/benchmark_report.md)
-[![Roadmap & Improvements](https://img.shields.io/badge/Architecture-IMPROVEMENTS.md-8A2BE2.svg)](IMPROVEMENTS.md)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)  [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)  [![PydanticAI](https://img.shields.io/badge/PydanticAI-2.62.0-E92063.svg)](https://ai.pydantic.dev/)  [![Qdrant Hybrid RRF](https://img.shields.io/badge/Qdrant-Native_Hybrid_RRF-DC2626.svg)](https://qdrant.tech/)  [![Turso Cloud](https://img.shields.io/badge/Turso-libSQL_Cloud-00E599.svg)](https://turso.tech/)  [![Ragas Evaluation](https://img.shields.io/badge/Ragas_Faithfulness-1.0000-brightgreen.svg)](evals/benchmark_report.md)  [![Citation Grounding](https://img.shields.io/badge/Citation_Grounding-100%25-brightgreen.svg)](evals/benchmark_report.md)  [![Roadmap & Improvements](https://img.shields.io/badge/Architecture-IMPROVEMENTS.md-8A2BE2.svg)](IMPROVEMENTS.md)
 
-> 🚀 **Future Roadmap & 1-Week Extension Plan:** Detailed technical specifications for hashing/caching, cross-encoder reranking, programmatic guardrails, context compaction, and multi-agent DAG swarm architectures are documented in [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
+> 🚀 **Future Plan:** Detailed technical specifications for hashing/caching, cross-encoder reranking, programmatic guardrails, context compaction, and multi-agent DAG swarm architectures are documented in [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
 
 ---
 
