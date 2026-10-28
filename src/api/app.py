@@ -3,9 +3,9 @@ FastAPI application factory and middleware configuration.
 """
 
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from src.utils.config import settings
 from src.api.routes import chat, refresh, leads, gaps
@@ -78,12 +78,9 @@ def create_app() -> FastAPI:
         if not static_dir.exists():
             static_dir = Path.cwd() / "static"
 
-    # Serve index.html on root and Vercel entrypoint paths
+    # Serve index.html on root
     @app.get("/", response_class=FileResponse)
     @app.get("/index.html", response_class=FileResponse)
-    @app.get("/api/index.py", response_class=FileResponse)
-    @app.get("/api/index", response_class=FileResponse)
-    @app.get("/static/index.html", response_class=FileResponse)
     def serve_index():
         index_file = static_dir / "index.html"
         if index_file.exists():
@@ -92,6 +89,17 @@ def create_app() -> FastAPI:
             f"<h1>PlacidWay Assistant: index.html not found</h1><p>Looked in: {static_dir}</p>",
             status_code=404,
         )
+
+    # Diagnostic endpoint when Vercel routes directly to api/index.py
+    @app.api_route("/api/index.py", methods=["GET", "POST", "HEAD", "OPTIONS"])
+    @app.api_route("/api/index", methods=["GET", "POST", "HEAD", "OPTIONS"])
+    async def vercel_entrypoint_debug(request: Request):
+        return JSONResponse({
+            "scope_path": request.scope.get("path"),
+            "headers": {k.decode("latin1", "ignore"): v.decode("latin1", "ignore") for k, v in request.scope.get("headers", [])},
+            "query_params": dict(request.query_params),
+            "url": str(request.url),
+        })
 
     # Mount static assets if directories exist
     if static_dir.exists():
