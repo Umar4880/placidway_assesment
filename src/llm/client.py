@@ -138,32 +138,44 @@ def get_llm(
 def get_dense_embeddings() -> Embeddings:
     """
     Factory function returning the dense embeddings client.
-    Uses GoogleGenerativeAIEmbeddings if API key present, else FastEmbed BGE-small.
+    Uses GoogleGenerativeAIEmbeddings exclusively without FastEmbed fallback.
     """
     api_key = (
         settings.get_google_api_key()
         or os.environ.get("GEMINI_API_KEY")
         or os.environ.get("GOOGLE_API_KEY")
     )
-    if api_key and api_key != "your_gemini_api_key_here":
-        try:
-            from langchain_google_genai import GoogleGenerativeAIEmbeddings
-            logger.info("Using Google Generative AI Embeddings: %s", settings.EMBEDDING_MODEL_NAME)
-            return GoogleGenerativeAIEmbeddings(
-                model=settings.EMBEDDING_MODEL_NAME,
-                google_api_key=api_key,
-            )
-        except Exception as e:
-            logger.warning("Failed to initialize Google embeddings (%s). Falling back to FastEmbed.", e)
+    if not api_key or api_key == "your_gemini_api_key_here":
+        raise ValueError("GEMINI_API_KEY is not configured. Please add GEMINI_API_KEY to your environment variables.")
 
-    logger.info("Using FastEmbed dense embeddings (BAAI/bge-small-en-v1.5).")
-    return FastEmbedDenseWrapper(model_name="BAAI/bge-small-en-v1.5")
+    model_name = settings.EMBEDDING_MODEL_NAME
+    if not model_name.startswith("models/"):
+        model_name = "models/" + model_name
+
+    try:
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        logger.info("Using Google Generative AI Embeddings: %s", model_name)
+        return GoogleGenerativeAIEmbeddings(
+            model=model_name,
+            google_api_key=api_key,
+        )
+    except Exception as e:
+        err_msg = str(e)
+        if "429" in err_msg or "quota" in err_msg.lower() or "rate limit" in err_msg.lower():
+            raise RuntimeError("Gemini embedding rate limit reached. Please wait a few seconds and try again.") from e
+        logger.error("Failed to initialize Google embeddings: %s", e)
+        raise RuntimeError(f"Google embedding service error: {err_msg}") from e
 
 
-def get_sparse_embeddings() -> SparseTextEmbedding:
+def get_sparse_embeddings() -> Optional[SparseTextEmbedding]:
     """
-    Returns FastEmbed Qdrant/bm25 sparse embedder for native hybrid search.
+    Returns FastEmbed Qdrant/bm25 sparse embedder if available and not on serverless.
     """
-    logger.info("Using FastEmbed sparse model: Qdrant/bm25")
-    cache_dir = "/tmp/fastembed_cache" if os.environ.get("VERCEL") else None
-    return SparseTextEmbedding(model_name="Qdrant/bm25", cache_dir=cache_dir)
+    if os.environ.get("VERCEL"):
+        # On Vercel serverless, bypass FastEmbed local ONNX download
+        return None
+    try:
+        return SparseTextEmbedding(model_name="Qdrant/bm25")
+    except Exception as e:
+        logger.warning("FastEmbed sparse model failed to load: %s", e)
+        return None

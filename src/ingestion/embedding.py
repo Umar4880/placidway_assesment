@@ -333,27 +333,8 @@ class EmbeddingService:
         if not query or not query.strip():
             return []
 
-        # 1. Embed query (dense + sparse)
+        # 1. Embed query (dense via Gemini Embeddings)
         dense_query = self.dense_embedder.embed_query(query)
-        sparse_query_obj = list(self.sparse_embedder.embed([query]))[0]
-        sparse_vector = models.SparseVector(
-            indices=sparse_query_obj.indices.tolist(),
-            values=sparse_query_obj.values.tolist(),
-        )
-
-        # 2. Build prefetch queries for native RRF fusion
-        prefetch = [
-            models.Prefetch(
-                query=dense_query,
-                using="dense",
-                limit=k * 2,
-            ),
-            models.Prefetch(
-                query=sparse_vector,
-                using="sparse",
-                limit=k * 2,
-            ),
-        ]
 
         query_filter = None
         if filter_dict:
@@ -363,14 +344,50 @@ class EmbeddingService:
             ]
             query_filter = models.Filter(must=must_conditions)
 
-        # 3. Execute native RRF query
-        response = self.client.query_points(
-            collection_name=self.collection_name,
-            prefetch=prefetch,
-            query=models.FusionQuery(fusion=models.Fusion.RRF),
-            query_filter=query_filter,
-            limit=k,
-        )
+        # 2. Execute search: hybrid RRF if sparse embedder is active, else dense-only
+        if self.sparse_embedder is not None:
+            try:
+                sparse_query_obj = list(self.sparse_embedder.embed([query]))[0]
+                sparse_vector = models.SparseVector(
+                    indices=sparse_query_obj.indices.tolist(),
+                    values=sparse_query_obj.values.tolist(),
+                )
+                prefetch = [
+                    models.Prefetch(
+                        query=dense_query,
+                        using="dense",
+                        limit=k * 2,
+                    ),
+                    models.Prefetch(
+                        query=sparse_vector,
+                        using="sparse",
+                        limit=k * 2,
+                    ),
+                ]
+                response = self.client.query_points(
+                    collection_name=self.collection_name,
+                    prefetch=prefetch,
+                    query=models.FusionQuery(fusion=models.Fusion.RRF),
+                    query_filter=query_filter,
+                    limit=k,
+                )
+            except Exception as e:
+                logger.warning("Sparse RRF prefetch failed (%s). Using dense query.", e)
+                response = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=dense_query,
+                    using="dense",
+                    query_filter=query_filter,
+                    limit=k,
+                )
+        else:
+            response = self.client.query_points(
+                collection_name=self.collection_name,
+                query=dense_query,
+                using="dense",
+                query_filter=query_filter,
+                limit=k,
+            )
 
         # 4. Convert to LangChain Document list
         retrieved_docs: List[Document] = []

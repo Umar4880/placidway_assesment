@@ -53,7 +53,7 @@ class Settings(BaseSettings):
 
     # Orchestration Settings
     DEFAULT_ORCHESTRATION_PATTERN: str = "pydantic_ai"
-    EMBEDDING_MODEL_NAME: str = "gemini-embedding-001"
+    EMBEDDING_MODEL_NAME: str = "models/gemini-embedding-001"
     PRIMARY_LLM_MODEL: str = "nvidia/nemotron-3.5-super-vl-120b-a12b"
     FALLBACK_LLM_MODEL: str = "gemini-3.5-flash"
 
